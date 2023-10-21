@@ -1,0 +1,10 @@
+day,date,username,name,department,job,time,status
+Sunday,2023-08-13,ogoskoloo,Odion Emmanuel,Ict,Technician,11:02:12,Signed-In
+Sunday,2023-08-13,obabaski,Job Daniel,Security,Security,11:02:25,Signed-In
+Thursday,2023-08-17,ogoskoloo,Odion Emmanuel,Ict,Technician,23:09:44,Signed-In
+Monday,2023-08-28,jesse,Jesse Febian,Safety,Safety Officer,02:36:25,Signed-In
+Monday,2023-08-28,obabaski,Job Daniel,Security,Security,02:36:47,Signed-In
+Monday,2023-08-28,jesse,Jesse Febian,Safety,Safety Officer,02:39:39,Signed-Out
+Monday,2023-08-28,obabaski,Job Daniel,Security,Security,02:40:10,Signed-Out
+Monday,2023-08-28,headt,Head Teacher,Admin,Head Teacher,02:40:17,Signed-In
+Monday,2023-08-28,jesse,Jesse Febian,Safety,Safety Officer,02:44:06,Invalid
