@@ -1,13 +1,9 @@
-import csv
-import datetime, os.path
+import datetime, os.path, os, glob, csv
 from datetime import date
 from datetime import datetime, timedelta
-from termcolor import *
-import colorama
-colorama.init()
+from xlsxwriter.workbook import Workbook
 
-def main():
-    counter = 0
+
 '''
 1. write a code to stop any other account creation after the first one has been created.
 2. for any other account to be created the first one must grant permission.
@@ -60,378 +56,302 @@ class Admin:
             print("Invalid input!")
 
 
-# create and stores admin sign in credentials
-def create_admin_signin_credentials():
-    cprint("\nCREATE ADMIN SIGN IN CREDENTIALS: \n", "green")
-    admin_credentials = Admin.admin_signin_credentials()
-    try:
-        with open("admin-credentials.csv", "a") as file:
-            fieldnames = ["username", "password"]
-            writer = csv.DictWriter(file, fieldnames = fieldnames)
-            #If file does not exist create header.            
-            if file.tell() == 0:
-                writer.writeheader()
-            writer.writerow({"username": admin_credentials.admin_username, "password": admin_credentials.admin_password})
-    except FileNotFoundError:
-        pass
-    except BaseException:
-        pass
-
-
-# registers new staff, only admin authorised to do this, require admin sign in credentials
-def create_staff_data():
-    cprint("\nREGISTER STAFF: \n", "green")
-    credentials = []
-    try:
-        with open("admin-credentials.csv") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                credentials.append(row)
-    except FileNotFoundError:
-        pass
-
-    admin_credentials = Admin.admin_signin_credentials()
-    for cred in credentials:    
-        if admin_credentials.admin_username != cred["username"] or admin_credentials.admin_password != cred["password"]:
-            print("Access denied! You're not an admin!!")
-        elif admin_credentials.admin_username == cred["username"] and admin_credentials.admin_password == cred["password"]:
-            # create and hold new employee record   
-            username = input("Staff unique username: ")
-            name = input("Staff name: ").title()
-            department = input("Department: ").title()
-            job = input("Job role: ").title()
-            try:
-                with open("employee-file.csv", "a") as file:
-                    fieldnames = ["date", "username", "name", "department", "job"]
-                    writer = csv.DictWriter(file, fieldnames = fieldnames)
-                    #If file does not exist create header.            
-                    if file.tell() == 0:
-                        writer.writeheader()
-                    writer.writerow({"date": date.today(), "username": username, "name": name, "department": department, "job": job})
-            except FileNotFoundError:
-                print("Can't write to employee file!")
-
-
-def delete_file():
-    '''
-    REQUIRE ADMINISTRATORS PASSWORD AND USERNAME TO DELETE FILE
-    '''
-    cprint("ENTER USERNAME AND PASSWORD TO DELETE FILE: ", "green")
-    credentials = []
-    try:
-        with open("admin-credentials.csv") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                credentials.append(row)
-    except FileNotFoundError:
-        pass
-
-    admin_credentials = Admin.admin_signin_credentials()
-    for cred in credentials:    
-        if admin_credentials.admin_username != cred["username"] or admin_credentials.admin_password != cred["password"]:
-            print("Access denied! You're not an admin!!")
-        elif admin_credentials.admin_username == cred["username"] and admin_credentials.admin_password == cred["password"]:                
-            # delete file
-            '''
-            TO DELETE ENTER THE NAME OF FILE TO DELETE        
-            To delete a csv file
-            first check if file exists
-            call remove method to delete the csv file
-            '''
-            filename_to_delete = input("File to delete: ")
-            ext = ".csv"
-            file = f"{filename_to_delete + ext}"
-            if(os.path.exists(file) and os.path.isfile(file)):
-                os.remove(file) 
-            cprint(f"{filename_to_delete} file is deleted!", "yellow") 
-
-
-
-# delete old temp file
-def delete_temp_file():
-    if(os.path.exists(old_temp_file()) and os.path.isfile(old_temp_file())):
-        os.remove(old_temp_file()) 
-
-
-
-# identify old temp file
-def old_temp_file():   
-    current_date = date.today() - timedelta(31)
-    old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
-    ext = "T.csv"
-    return f"{str(old_temp_file_name) + ext}"
-
-# create a daily temporary file
-def temp_file():
-    current_date = date.today()
-    daily_file_name = date(current_date.year, current_date.month, current_date.day)
-    ext = "T.csv"
-    return f"{str(daily_file_name) + ext}" 
-
-"""
-Name of function: get_employee_name
-
-Purpose: The get_employee_name()function will return the name of the employee whose username matches the corresponding username extracted from the file passed into the function as argument.
-"""
-
-def get_employee_name(user_name):
-    with open("employee-file.csv") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            if user_name == row["username"]:
-                return row["name"]
-
-
-
-# check the temp file if staff has signed in/out for the day, display a message to alert staff
-def check_attendance_status(username):
-    currentT = datetime.now().strftime("%H:%M:%S")
-    attendance_count = []
-    with open(temp_file()) as file:
-        reader = csv.DictReader(file)
-        for row in reader:  
-            attendance_count.append(row["username"]) 
-        attendance = attendance_count.count(username)        
-        if attendance == 1:
-            print(f"Successful! You Signed-In @{currentT}. Welcome {get_employee_name(username)}!")
-        elif attendance ==2:
-            print(f"Successful! You Signed-Out @{currentT}. Goodbye {get_employee_name(username)}!")
-        else:
-            print(f"Try again tomorrow {get_employee_name(username)}!") 
-
-
-def attendance_status(username):
-    attendance_count = []
-    with open(temp_file()) as file:
-        reader = csv.DictReader(file)
-        for row in reader:  
-            attendance_count.append(row["username"]) 
-        attendance = attendance_count.count(username)        
-        if attendance == 1:
-            return f"{'Signed-In'}"
-        elif attendance ==2:
-            return f"{'Signed-Out'}"
-        else:
-            return f"{'Invalid'}"   
-    
-
-# a daily file that temporarily stores sign-in/sign-out activities, the file is deleted at the beginning
-#of the next working day.
-def create_temp_file(username):
-    # delete old temp file
-    delete_temp_file()    
-    #read employee file to employee list
-    employee_list = []
-    try:
-        with open("employee-file.csv") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                employee_list.append(row)
-    except FileNotFoundError:
-        print("Can't read employee file!")     
-
-    # loop thru employee list
-    for employee in employee_list:
-        if username == employee["username"]:    
-            name = employee["name"]
-            department = employee["department"]
-            job = employee["job"] 
-
-            try:
-                with open(temp_file(), "a") as file:
-                    fieldnames = ["date", "username", "name", "department", "job", "time"]
-                    writer = csv.DictWriter(file, fieldnames = fieldnames)
-                    #If file does not exist create header.            
-                    if file.tell() == 0:
-                        writer.writeheader()
-                    writer.writerow({"date": date.today(), "username": username, "name": name, "department": department, "job": job})                    
-            except FileNotFoundError:
-                print("Can't write to temp file!")   
-    # check if staff is signed in/out
-    check_attendance_status(username)
-    
-
-# a monthly file that stores daily sign-in/sign-out activities
-def create_staff_attendance(username):
-    day = date.today().strftime("%A")
-    #read employee file to employee list
-    employee_list = []
-    try:
-        with open("employee-file.csv") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                employee_list.append(row)
-    except FileNotFoundError:
-        print("Can't read employee file!")     
-
-    # loop thru employee list
-    for employee in employee_list:
-        if username == employee["username"]:    
-            name = employee["name"]
-            department = employee["department"]
-            job = employee["job"] 
-
-            try: 
-                with open(attendance_file_name(), "a") as file:        
-                    fieldnames = ["day", "date", "username", "name", "department", "job", "time", "status"]
-                    writer = csv.DictWriter(file, fieldnames=fieldnames)
-                    #If file does not exist create header.            
-                    if file.tell() == 0:
-                        writer.writeheader()
-                    writer.writerow({"day": day, "date": date.today(), "username": username, "name": name, "department": department, "job": job, "time": datetime.now().strftime("%H:%M:%S"), "status": attendance_status(username)})
-            except FileNotFoundError:
-                print("Can't write to attendance file!")
-                break            
-        else:
-            pass
-
-'''
-THIS FUNCTION WILL CREATE NEW ATTENDANCE FILE EVERY MONTH
-'''
-def attendance_file_name():       
-    current_date = date.today()
-    first_day_of_month = date(current_date.year, current_date.month, 1)
-    ext = ".csv"    
-    attendance_filename = f"{str(first_day_of_month) + ext}"
-    create_attendance_filename_file2(attendance_filename)
-    create_attendance_filename_file1(attendance_filename)        
-    return attendance_filename
-
-
-# write the names of attendance filename created monthly into a file 
-#attendance_filename_file() 
-def create_attendance_filename_file1(file_name):     
-    # write the names of attendance filename created monthly into a file    
-    try:
-        with open("attendance-file-name1.csv", "w") as file:
-            fieldnames = ["file_name"]
-            writer = csv.DictWriter(file, fieldnames = fieldnames)
-            #If file does not exist create header.            
-            if file.tell() == 0:
-                writer.writeheader()
-            writer.writerow({"file_name": file_name})
-    except FileNotFoundError:
-        pass
-    
-
-
-def create_attendance_filename_file2(file_name):    
-    counter = 0
-    attendance_filenames1 = []
-    try:
-        with open("attendance-file-name1.csv") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                file_name1 = row["file_name"]    
-                if  file_name != file_name1:                                                    
-                    attendance_filenames1.append(file_name) 
-
-    except FileNotFoundError:
-        pass
-    for _ in attendance_filenames1:       
-        counter += 1        
-                      
+    # create and stores admin sign in credentials
+    @classmethod
+    def create_admin_signin_credentials(cls):
+        print("\nCREATE ADMIN SIGN IN CREDENTIALS: \n")
+        admin_credentials = cls.admin_signin_credentials()
         try:
-            with open("attendance-file-name2.csv", "a") as file:
-                fieldnames = ["counter", "date", "file_name"]
+            with open("admin-credentials.csv", "a", newline="") as file:
+                fieldnames = ["username", "password"]
                 writer = csv.DictWriter(file, fieldnames = fieldnames)
                 #If file does not exist create header.            
                 if file.tell() == 0:
                     writer.writeheader()
-                writer.writerow({"counter": counter, "date": date.today(), "file_name": file_name})
-        except FileNotFoundError:
+                writer.writerow({"username": admin_credentials.admin_username, "password": admin_credentials.admin_password})
+                print("Admin account Created!")
+        except BaseException:
             pass
-        break
-        
 
 
-def open_attendance_filename_file2():    
-    attendance_filenames2 = []
-    attendance_filenames3 = []
-    try:
-        with open("attendance-file-name2.csv") as file:
+class Employee:
+
+    # registers new staff, only admin authorised to do this,
+    #  require admin sign in credentials
+    @classmethod
+    def create_employee_data(cls):
+        print("\nREGISTER STAFF: \n")
+        credentials = []
+        try:
+            with open("admin-credentials.csv") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    credentials.append(row)
+        except BaseException:
+            pass
+
+        admin_credentials = Admin.admin_signin_credentials()
+        for cred in credentials:    
+            if admin_credentials.admin_username == cred["username"] and admin_credentials.admin_password == cred["password"]:
+                try:
+                    # create and hold new employee record   
+                    username = input("Staff unique username: ")
+                    name = input("Staff name: ").title()
+                    department = input("Department: ").title()
+                    job = input("Job role: ").title()
+                except BaseException:
+                    pass
+                try:
+                    with open("employee-file.csv", "a", newline="") as file:
+                        fieldnames = ["date", "username", "name", "department", "job"]
+                        writer = csv.DictWriter(file, fieldnames = fieldnames)
+                        #If file does not exist create header.            
+                        if file.tell() == 0:
+                            writer.writeheader()
+                        writer.writerow({"date": date.today(), "username": username, "name": name, "department": department, "job": job})
+                except BaseException:
+                    print("Can't write to employee file!")
+            else:
+                print("Access denied!")
+
+
+
+
+    @classmethod
+    def get_employee_name(cls, user_name):
+        with open("employee-file.csv") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                attendance_filenames2.append(row["file_name"]) 
-                attendance_filenames3.append(row)               
-    except FileNotFoundError:
-        pass
-    cprint("STAFF ATTENDANCE FILE NAME: ", "yellow")
-    for attendance2 in attendance_filenames2:
-        for attendance3 in attendance_filenames3:
-            filename_minus_csv = attendance2[0:10]
+                if user_name == row["username"]:
+                    return row["name"]
+
+
+
+class Temp:
+    # delete old temp file
+    @classmethod    
+    def delete_previous_month_csv_file(cls):
+        if(os.path.exists(cls.locate_previous_month_csv_file()) and os.path.isfile(cls.locate_previous_month_csv_file())):
+            os.remove(cls.locate_previous_month_csv_file()) 
         
-    '''
-    remove .csv from attendance_filename before writing into file
-    attendance_file_name = attendance_filename - .csv
-    '''
-    print(attendance3["counter"], ",", attendance3["date"], ",", "FILE NAME: ", filename_minus_csv)
 
 
-def view_staff_attendance():
-    #display list of stored file names for admin to easily make a choice
-    open_attendance_filename_file2()
-    file_input= input("Enter the staff attendance file name you wish to view: ")
-    ext = ".csv"
-    staff_attendance_filename = f"{file_input + ext}"
-    counter = 0
-    cprint(f"\nSTAFF ATTENDANCE FOR {file_input} \n", "yellow")
-    attendance_list = []
-    with open(staff_attendance_filename) as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            attendance_list.append(row)
-    for attendance in attendance_list:
-        counter += 1
-        print(counter, "  ", attendance["day"], attendance["date"], "  ", attendance["name"], "  ", attendance["department"], "  ", attendance["job"], "  ", attendance["time"], "  ", attendance["status"])
-    print("\n")
-    input_response = input("Type 's' to save and 'p' to print staff attendance: ").title()
-    if not input_response:
-        pass
-    elif input_response == "S":
-        ...
-    elif input_response == "P":
-        ...
+    # identify old temp file  
+    @classmethod  
+    def locate_previous_month_csv_file(cls):   
+        current_date = date.today() - timedelta(51)
+        old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
+        ext = "monthly_file.csv"
+        return f"{str(old_temp_file_name) + ext}"
 
 
-def process_attendance():
-    currentT = datetime.now().strftime("%H:%M:%S")
-    current_date = date.today()
-    date_today = date(current_date.year, current_date.month, current_date.day)
-    print("DATE:", current_date.strftime("%A"), ",", date_today, "\nTIME:", currentT)
+    # delete old temp file
+    @classmethod
+    def delete_temp_file(cls):
+        if(os.path.exists(cls.old_temp_file()) and os.path.isfile(cls.old_temp_file())):
+            os.remove(cls.old_temp_file()) 
 
-    cprint("\nSIGN-IN OR SIGN-OUT WITH YOUR USERNAME\n", "green")
+    # identify old temp file
+    @classmethod
+    def old_temp_file(cls):   
+        current_date = date.today() - timedelta(1)
+        old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
+        ext = "T.csv"
+        return f"{str(old_temp_file_name) + ext}"
 
-    '''
-    CREATE ATTENDANCE
-    '''
+    # create a daily temporary file
+    @classmethod
+    def temp_file(cls):
+        current_date = date.today()
+        daily_file_name = date(current_date.year, current_date.month, current_date.day)
+        ext = "T.csv"
+        return f"{str(daily_file_name) + ext}" 
 
-    while True:
-        try:            
-            username = input("ENSURE YOU PRESS THE ENTER KEY AFTER ENTERING YOUR USERNAME HERE: ")          
-            if not username:
-                break
-                
-            elif username:
-                # a daily file that temporarily stores sign-in/sign-out activities, the file is deleted at the beginning
-                #of the next working day.                
-                create_temp_file(username) 
-                print("\n")
-                # a monthly file that stores daily sign-in/sign-out activities                   
-                create_staff_attendance(username)
-                               
-                                                              
+
+
+    # a daily file that temporarily stores sign-in/sign-out activities, the file
+    #  is deleted at the beginning of the next working day.
+    @classmethod   
+    def create_temp_file(cls, username):
+        # delete old temp file
+        cls.delete_temp_file()    
+        #read employee file to employee list
+        employee_list = []
+        try:
+            with open("employee-file.csv") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    employee_list.append(row)
+        except BaseException:
+            print("Can't read employee file!")     
+
+        # loop thru employee list
+        for employee in employee_list:
+            if username == employee["username"]:    
+                name = employee["name"]
+                department = employee["department"]
+                job = employee["job"] 
+
+                try:
+                    with open(cls.temp_file(), "a", newline="") as file:
+                        fieldnames = ["date", "username", "name", "department", "job", "time"]
+                        writer = csv.DictWriter(file, fieldnames = fieldnames)
+                        #If file does not exist create header.            
+                        if file.tell() == 0:
+                            writer.writeheader()
+                        writer.writerow({"date": date.today(), "username": username, "name": name, "department": department, "job": job})                    
+                except BaseException:
+                    print("Can't write to temp file!")   
+        # check if staff is signed in/out
+        Attendance.check_attendance_status(username)
+
+
+
+
+
+class Attendance:
+
+    # check the temp file if staff has signed in/out for the day, display a 
+    # message to alert staff
+    @classmethod
+    def check_attendance_status(cls, username):
+        currentT = datetime.now().strftime("%H:%M:%S")
+        attendance_count = []
+        with open(Temp.temp_file()) as file:
+            reader = csv.DictReader(file)
+            for row in reader:  
+                attendance_count.append(row["username"]) 
+            attendance = attendance_count.count(username)        
+            if attendance == 1:
+                print(f"Successful! You Signed-In @{currentT}. Welcome {Employee.get_employee_name(username)}!")
+            elif attendance ==2:
+                print(f"Successful! You Signed-Out @{currentT}. Goodbye {Employee.get_employee_name(username)}!")
             else:
-                # otherwise access is denied. And employee need to check the username they entered or create
-                # a new username if they are newly employed
-                print("Access denied! Check username.")                               
-        except:
-            print("Unknown username!")
+                print(f"Try again tomorrow {Employee.get_employee_name(username)}!") 
+
     
     
+    @classmethod
+    def attendance_status(cls, username):
+        attendance_count = []
+        with open(Temp.temp_file()) as file:
+            reader = csv.DictReader(file)
+            for row in reader:  
+                attendance_count.append(row["username"]) 
+            attendance = attendance_count.count(username)        
+            if attendance == 1:
+                return f"{'Signed-In'}"
+            elif attendance ==2:
+                return f"{'Signed-Out'}"
+            else:
+                return f"{'Invalid'}"   
+    
+
+
+    # a monthly file that stores daily sign-in/sign-out activities
+    @classmethod
+    def create_attendance(cls, username): 
+        Temp.delete_previous_month_csv_file()              
+        day = date.today().strftime("%A")
+        #read employee file to employee list
+        employee_list = []
+        try:
+            with open("employee-file.csv") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    employee_list.append(row)
+        except BaseException:
+            print("Can't read employee file!")     
+        
+        # loop thru employee list
+        for employee in employee_list:
+            if username == employee["username"]:    
+                name = employee["name"]
+                department = employee["department"]
+                job = employee["job"]                
+        try:                    
+            with open(cls.attendance_file_name(), "a", newline="") as file:        
+                fieldnames = ["day", "date", "username", "name", "department", "job", "time", "status"]
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                #If file does not exist create header.            
+                if file.tell() == 0:
+                    writer.writeheader()
+                writer.writerow({"day": day, "date": date.today(), "username": username, "name": name, "department": department, "job": job, "time": datetime.now().strftime("%H:%M:%S"), "status": cls.attendance_status(username)})
+        except BaseException:
+            pass
+                        
+                
+
+    '''
+    THIS FUNCTION WILL CREATE NEW ATTENDANCE FILE EVERY MONTH
+    '''
+    @classmethod
+    def attendance_file_name(cls):       
+        current_date = date.today()
+        first_day_of_month = date(current_date.year, current_date.month, 1)
+        ext = "monthly_file.csv"    
+        attendance_filename = f"{str(first_day_of_month) + ext}"            
+        return attendance_filename
+
+
+    @classmethod
+    def process_attendance(cls):
+        currentT = datetime.now().strftime("%H:%M:%S")
+        current_date = date.today()
+        date_today = date(current_date.year, current_date.month, current_date.day)
+        print("DATE:", current_date.strftime("%A"), ",", date_today, "\nTIME:", currentT)
+
+        print("\nSIGN-IN OR SIGN-OUT WITH YOUR USERNAME\n")
+
+        '''
+        CREATE ATTENDANCE
+        '''
+
+        while True:
+            try:            
+                username = input("PRESS ENTER KEY AFTER ENTERING YOUR USERNAME HERE: ").strip()
+                         
+                if username == "admin":
+                    break
+                    
+                elif username:
+                    
+                    # a daily file that temporarily stores sign-in/sign-out activities, the file is deleted at the beginning
+                    #of the next working day.                
+                    Temp.create_temp_file(username) 
+                    print("\n")
+                    # a monthly file that stores daily sign-in/sign-out activities                   
+                    cls.create_attendance(username)
+                    #Converts monthly csv file to excel file.
+                    cls.csv_to_excel()
+                                
+                                                                
+                else:
+                    # otherwise access is denied. And employee need to check the username they entered or create
+                    # a new username if they are newly employed
+                    print("Access denied! Check username.")                               
+            except:
+                print("Unknown username!")
+    
+    
+    
+    @classmethod    
+    def csv_to_excel(cls):        
+        for csvfile in glob.glob(os.path.join(".", "*monthly_file.csv")):
+            workbook = Workbook(csvfile[:-4] + '.xlsx')
+            worksheet = workbook.add_worksheet()
+            with open(csvfile, 'rt', encoding='utf8') as f:
+                reader = csv.reader(f)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
+            workbook.close()    
 
 
 
+def main():
+    counter = 0
+    
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,6 @@
+day,date,username,name,department,job,time,status
+Sunday,2023-10-22,jesse,Jesse Febian,Safety,Safety Officer,13:34:32,Signed-In
+Sunday,2023-10-22,jesse,Jesse Febian,Safety,Safety Officer,13:44:37,Signed-Out
+Sunday,2023-10-22,jesse,Jesse Febian,Safety,Safety Officer,16:37:01,Invalid
+Sunday,2023-10-22,headt,Head Teacher,Admin,Head Teacher,16:37:07,Signed-In
+Sunday,2023-10-22,Bob cece,Bob Cece,Upper Primary,Teacher,16:37:17,Signed-In

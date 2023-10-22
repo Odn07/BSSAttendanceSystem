@@ -1,43 +1,44 @@
-from mod import *
+import mod
 
 '''
 STAFF ATTENDANCE MANAGEMENT SYSTEM
 '''
 
-cprint("\nBRILLIANT STAR SCHOOLS STAFF ATTENDANCE SYSTEM\n", "green")
-cprint("MENU =>: |ACCOUNT, |REGISTER, |VIEW, |EDIT", "yellow")
+print("\nATTENDANCE SYSTEM\n")
+print("MENU =>: |Account, |Register\n")
+
+menu = int(input("PRESS 1 TO SIGN-IN/SIGN-OUT, 2 TO USE MENU, ZERO TO LOGOFF. "))
+
+match menu:
+    case 1:
+        print("\n")
+        mod.Attendance.process_attendance()
+    case 2:
+        while True:
+            try:
+                menu = input("Menu: ").title()
+                if menu == "Admin":
+                    break
+                menu_list = ["Account", "Register"]
+                if menu in menu_list:
+                    match menu:
+                        case "Account":
+                            mod.Admin.create_admin_signin_credentials()
+                        case "Register":
+                            mod.Employee.create_employee_data()            
+                                        
+                        case _:
+                            print("Invalid input")
+                            
+            except:
+                print("Wrong input!")
+
+    case 0:
+       pass
 
 
-print("\n")
-process_attendance()
+#mod.Admin.create_admin_signin_credentials()
 
-
-while True:
-    try:
-        menu = input("Enter menu: ").title()
-        if not menu:
-            break
-        menu_list = ["Account", "Register", "View", "Edit"]
-        if menu in menu_list:
-            match menu:
-                case "Account":
-                    create_admin_signin_credentials()
-                case "Register":
-                    create_staff_data()                
-                case "View":
-                    view_staff_attendance()
-                case "Edit":
-                    '''
-                    At the end of the editing task, prompt user
-                    to save, and then print file.
-                    '''
-                    ...                      
-                case _:
-                    ...
-                
-
-    except:
-        print("Wrong input!")
 
 
 #WORK IN PROGRESS ....        
