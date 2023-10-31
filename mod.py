@@ -136,7 +136,7 @@ class Temp:
         try:
             if(os.path.exists(cls.locate_previous_month_csv_file()) and os.path.isfile(cls.locate_previous_month_csv_file())):
                 os.remove(cls.locate_previous_month_csv_file()) 
-        except BaseException as err
+        except BaseException as err:
             pass    
 
 
