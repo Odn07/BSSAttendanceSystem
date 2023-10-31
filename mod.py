@@ -119,54 +119,68 @@ class Employee:
 
     @classmethod
     def get_employee_name(cls, user_name):
-        with open("employee-file.csv") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if user_name == row["username"]:
-                    return row["name"]
-
+        try:
+            with open("employee-file.csv") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    if user_name == row["username"]:
+                        return row["name"]
+        except BaseException as err:
+            pass
 
 
 class Temp:
     # delete old temp file
     @classmethod    
     def delete_previous_month_csv_file(cls):
-        if(os.path.exists(cls.locate_previous_month_csv_file()) and os.path.isfile(cls.locate_previous_month_csv_file())):
-            os.remove(cls.locate_previous_month_csv_file()) 
-        
+        try:
+            if(os.path.exists(cls.locate_previous_month_csv_file()) and os.path.isfile(cls.locate_previous_month_csv_file())):
+                os.remove(cls.locate_previous_month_csv_file()) 
+        except BaseException as err
+            pass    
 
 
     # identify old temp file  
     @classmethod  
-    def locate_previous_month_csv_file(cls):   
-        current_date = date.today() - timedelta(51)
-        old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
-        ext = "monthly_file.csv"
-        return f"{str(old_temp_file_name) + ext}"
-
+    def locate_previous_month_csv_file(cls):
+        try:   
+            current_date = date.today() - timedelta(51)
+            old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
+            ext = "monthly_file.csv"
+            return f"{str(old_temp_file_name) + ext}"
+        except BaseException as err:
+            pass
 
     # delete old temp file
     @classmethod
     def delete_temp_file(cls):
-        if(os.path.exists(cls.old_temp_file()) and os.path.isfile(cls.old_temp_file())):
-            os.remove(cls.old_temp_file()) 
-
+        try:
+            if(os.path.exists(cls.old_temp_file()) and os.path.isfile(cls.old_temp_file())):
+                os.remove(cls.old_temp_file()) 
+        except BaseException as err:
+            pass
+   
     # identify old temp file
     @classmethod
-    def old_temp_file(cls):   
-        current_date = date.today() - timedelta(1)
-        old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
-        ext = "T.csv"
-        return f"{str(old_temp_file_name) + ext}"
+    def old_temp_file(cls):
+        try:   
+            current_date = date.today() - timedelta(1)
+            old_temp_file_name = date(current_date.year, current_date.month, current_date.day)
+            ext = "T.csv"
+            return f"{str(old_temp_file_name) + ext}"
+        except BaseException as err:
+            pass
 
     # create a daily temporary file
     @classmethod
     def temp_file(cls):
-        current_date = date.today()
-        daily_file_name = date(current_date.year, current_date.month, current_date.day)
-        ext = "T.csv"
-        return f"{str(daily_file_name) + ext}" 
-
+        try:
+            current_date = date.today()
+            daily_file_name = date(current_date.year, current_date.month, current_date.day)
+            ext = "T.csv"
+            return f"{str(daily_file_name) + ext}" 
+        except BAseException as err:
+            pass
 
 
     # a daily file that temporarily stores sign-in/sign-out activities, the file
@@ -215,37 +229,41 @@ class Attendance:
     # message to alert staff
     @classmethod
     def check_attendance_status(cls, username):
-        currentT = datetime.now().strftime("%H:%M:%S")
-        attendance_count = []
-        with open(Temp.temp_file()) as file:
-            reader = csv.DictReader(file)
-            for row in reader:  
-                attendance_count.append(row["username"]) 
-            attendance = attendance_count.count(username)        
-            if attendance == 1:
-                print(f"Successful! You Signed-In @{currentT}. Welcome {Employee.get_employee_name(username)}!")
-            elif attendance ==2:
-                print(f"Successful! You Signed-Out @{currentT}. Goodbye {Employee.get_employee_name(username)}!")
-            else:
-                print(f"Try again tomorrow {Employee.get_employee_name(username)}!") 
-
+        try:
+            currentT = datetime.now().strftime("%H:%M:%S")
+            attendance_count = []
+            with open(Temp.temp_file()) as file:
+                reader = csv.DictReader(file)
+                for row in reader:  
+                    attendance_count.append(row["username"]) 
+                attendance = attendance_count.count(username)        
+                if attendance == 1:
+                    print(f"\nSuccessful! You Signed-In @{currentT}. Welcome {Employee.get_employee_name(username)}!")
+                elif attendance ==2:
+                    print(f"\nSuccessful! You Signed-Out @{currentT}. Goodbye {Employee.get_employee_name(username)}!")
+                else:
+                    print(f"\nTry again tomorrow {Employee.get_employee_name(username)}!") 
+        except BaseException as err:
+            pass
     
     
     @classmethod
     def attendance_status(cls, username):
-        attendance_count = []
-        with open(Temp.temp_file()) as file:
-            reader = csv.DictReader(file)
-            for row in reader:  
-                attendance_count.append(row["username"]) 
-            attendance = attendance_count.count(username)        
-            if attendance == 1:
-                return f"{'Signed-In'}"
-            elif attendance ==2:
-                return f"{'Signed-Out'}"
-            else:
-                return f"{'Invalid'}"   
-    
+        try:
+            attendance_count = []
+            with open(Temp.temp_file()) as file:
+                reader = csv.DictReader(file)
+                for row in reader:  
+                    attendance_count.append(row["username"]) 
+                attendance = attendance_count.count(username)        
+                if attendance == 1:
+                    return f"{'Signed-In'}"
+                elif attendance ==2:
+                    return f"{'Signed-Out'}"
+                else:
+                    return f"{'Invalid'}"   
+        except BaseException as err:
+            pass    
 
 
     # a monthly file that stores daily sign-in/sign-out activities
@@ -286,13 +304,15 @@ class Attendance:
     THIS FUNCTION WILL CREATE NEW ATTENDANCE FILE EVERY MONTH
     '''
     @classmethod
-    def attendance_file_name(cls):       
-        current_date = date.today()
-        first_day_of_month = date(current_date.year, current_date.month, 1)
-        ext = "monthly_file.csv"    
-        attendance_filename = f"{str(first_day_of_month) + ext}"            
-        return attendance_filename
-
+    def attendance_file_name(cls):
+        try:
+            current_date = date.today()
+            first_day_of_month = date(current_date.year, current_date.month, 1)
+            ext = "monthly_file.csv"    
+            attendance_filename = f"{str(first_day_of_month) + ext}"            
+            return attendance_filename
+        except BaseExcepton as err:
+            pass
 
     @classmethod
     def process_attendance(cls):
@@ -336,17 +356,19 @@ class Attendance:
     
     
     @classmethod    
-    def csv_to_excel(cls):        
-        for csvfile in glob.glob(os.path.join(".", "*monthly_file.csv")):
-            workbook = Workbook(csvfile[:-4] + '.xlsx')
-            worksheet = workbook.add_worksheet()
-            with open(csvfile, 'rt', encoding='utf8') as f:
-                reader = csv.reader(f)
-                for r, row in enumerate(reader):
-                    for c, col in enumerate(row):
-                        worksheet.write(r, c, col)
-            workbook.close()    
-
+    def csv_to_excel(cls):
+        try:        
+            for csvfile in glob.glob(os.path.join(".", "*monthly_file.csv")):
+                workbook = Workbook(csvfile[:-4] + '.xlsx')
+                worksheet = workbook.add_worksheet()
+                with open(csvfile, 'rt', encoding='utf8') as f:
+                    reader = csv.reader(f)
+                    for r, row in enumerate(reader):
+                        for c, col in enumerate(row):
+                            worksheet.write(r, c, col)
+                workbook.close()    
+        except BaseException as err:
+            pass
 
 
 def main():
